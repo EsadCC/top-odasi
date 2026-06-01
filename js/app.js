@@ -1,80 +1,88 @@
+// =============================================
 // The Dark House — app.js
+// Bijhoudt voortgang, levens, win- en verliesscherm
+// =============================================
 
-let totalBoxes = 0;
+const MAX_LIVES = 3;
+
+let totalBoxes  = 0;
 let solvedBoxes = 0;
-let currentIndex = null;
+let livesLeft   = MAX_LIVES;
 
+// ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
   totalBoxes = document.querySelectorAll('.box').length;
   updateProgress();
+  renderLives();
 });
 
+// ---- Open modal ----
 function openModal(index) {
+  if (livesLeft <= 0) return; // geen levens meer, spel voorbij
+
   let box = document.querySelector(`.box[data-index='${index}']`);
   if (!box || box.classList.contains('solved')) return;
 
-  currentIndex = index;
-
-  let riddleText   = box.dataset.riddle;
-  let correctAnswer = box.dataset.answer;
-  let hintText     = box.dataset.hint || '';
-
-  document.getElementById('riddle').innerText = riddleText;
-  document.getElementById('modal').dataset.answer = correctAnswer;
+  // Vul modal
+  document.getElementById('riddle').innerText = box.dataset.riddle;
+  document.getElementById('modal').dataset.answer = box.dataset.answer;
   document.getElementById('modal').dataset.index  = index;
 
-  let hintEl = document.getElementById('hint-text');
+  // Hint
+  let hintEl     = document.getElementById('hint-text');
   let hintToggle = document.getElementById('hint-toggle');
-  hintEl.style.display = 'none';
-  hintToggle.innerText = 'Toon hint';
+  let hintText   = box.dataset.hint || '';
+
   if (hintText) {
     hintEl.innerText = hintText;
+    hintEl.style.display = 'none';
     hintToggle.style.display = 'inline-block';
+    hintToggle.innerText = 'Toon hint';
   } else {
+    hintEl.style.display = 'none';
     hintToggle.style.display = 'none';
   }
 
-  document.getElementById('answer').value = '';
+  // Reset
+  document.getElementById('answer').value    = '';
   document.getElementById('feedback').innerText = '';
+  document.getElementById('answer').style.borderColor = '';
 
-  let overlay = document.getElementById('overlay');
-  let modal   = document.getElementById('modal');
-  overlay.style.display = 'block';
-  modal.style.display   = 'block';
-  // Re-trigger animation
-  modal.style.animation = 'none';
-  modal.offsetHeight;
-  modal.style.animation = '';
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('modal').style.display   = 'block';
 
   setTimeout(() => document.getElementById('answer').focus(), 80);
 }
 
+// ---- Hint toggle ----
 function toggleHint() {
   let hintEl = document.getElementById('hint-text');
   let toggle = document.getElementById('hint-toggle');
-  let hidden = hintEl.style.display === 'none' || !hintEl.style.display;
+  let hidden = hintEl.style.display === 'none' || hintEl.style.display === '';
   hintEl.style.display = hidden ? 'block' : 'none';
   toggle.innerText = hidden ? 'Verberg hint' : 'Toon hint';
 }
 
+// ---- Close modal ----
 function closeModal() {
   document.getElementById('overlay').style.display = 'none';
   document.getElementById('modal').style.display   = 'none';
   document.getElementById('feedback').innerText    = '';
-  currentIndex = null;
 }
 
+// ---- Check answer ----
 function checkAnswer() {
-  let input   = document.getElementById('answer');
-  let userAnswer    = input.value.trim();
+  let userAnswer    = document.getElementById('answer').value.trim();
   let correctAnswer = document.getElementById('modal').dataset.answer;
-  let index   = document.getElementById('modal').dataset.index;
-  let feedback = document.getElementById('feedback');
+  let index         = document.getElementById('modal').dataset.index;
+  let feedback      = document.getElementById('feedback');
+  let input         = document.getElementById('answer');
 
   if (!userAnswer) return;
 
   if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
-    feedback.innerText  = '✓ Correct! Goed gedaan!';
+    // ✅ Correct
+    feedback.innerText   = '✓ Correct! Goed gedaan!';
     feedback.style.color = '#4caf50';
 
     let box = document.querySelector(`.box[data-index='${index}']`);
@@ -93,42 +101,74 @@ function checkAnswer() {
     }, 900);
 
   } else {
-    feedback.innerText  = '✗ Fout antwoord. Probeer opnieuw!';
-    feedback.style.color = '#cc2222';
+    // ❌ Fout
+    livesLeft--;
+    renderLives();
 
-    // Shake animation
-    input.classList.remove('shake');
-    input.offsetHeight; // reflow
-    input.classList.add('shake');
     input.style.borderColor = '#cc2222';
-    setTimeout(() => {
-      input.style.borderColor = '';
-      input.classList.remove('shake');
-    }, 500);
+    setTimeout(() => { input.style.borderColor = ''; }, 600);
+
+    if (livesLeft <= 0) {
+      feedback.innerText   = '✗ Geen levens meer!';
+      feedback.style.color = '#cc2222';
+      setTimeout(() => {
+        closeModal();
+        showLoseScreen();
+      }, 1000);
+    } else {
+      feedback.innerText   = `✗ Fout antwoord. Nog ${livesLeft} ${livesLeft === 1 ? 'leven' : 'levens'} over.`;
+      feedback.style.color = '#cc2222';
+    }
   }
 }
 
+// ---- Render lives (♥ icons) ----
+function renderLives() {
+  let el = document.getElementById('lives-display');
+  if (!el) return;
+  let full  = '♥'.repeat(livesLeft);
+  let empty = '♡'.repeat(MAX_LIVES - livesLeft);
+  el.innerHTML =
+    `<span style="color:var(--red-light)">${full}</span>` +
+    `<span style="color:var(--border)">${empty}</span>`;
+}
+
+// ---- Update progress bar ----
+function updateProgress() {
+  let bar   = document.getElementById('progress-fill');
+  let label = document.getElementById('progress-label');
+  if (!totalBoxes) return;
+  let pct = (solvedBoxes / totalBoxes) * 100;
+  if (bar)   bar.style.width = pct + '%';
+  if (label) label.innerText = `${solvedBoxes} / ${totalBoxes} raadsels opgelost`;
+}
+
+// ---- Win screen ----
+function showWinScreen() {
+  document.querySelector('.container').style.display  = 'none';
+  document.querySelector('.progress-wrap').style.display = 'none';
+  let lives = document.querySelector('.lives-wrap');
+  if (lives) lives.style.display = 'none';
+
+  let win = document.getElementById('win-screen');
+  if (win) win.style.display = 'block';
+}
+
+// ---- Lose screen ----
+function showLoseScreen() {
+  document.querySelector('.container').style.display  = 'none';
+  document.querySelector('.progress-wrap').style.display = 'none';
+  let lives = document.querySelector('.lives-wrap');
+  if (lives) lives.style.display = 'none';
+
+  let lose = document.getElementById('lose-screen');
+  if (lose) lose.style.display = 'block';
+}
+
+// ---- Keyboard shortcuts ----
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeModal();
   if (e.key === 'Enter' && document.getElementById('modal').style.display === 'block') {
     checkAnswer();
   }
 });
-
-function updateProgress() {
-  if (!totalBoxes) return;
-  let pct   = (solvedBoxes / totalBoxes) * 100;
-  let bar   = document.getElementById('progress-fill');
-  let label = document.getElementById('progress-label');
-  if (bar)   bar.style.width = pct + '%';
-  if (label) label.innerText = `${solvedBoxes} / ${totalBoxes} opgelost`;
-}
-
-function showWinScreen() {
-  let grid     = document.querySelector('.container');
-  let win      = document.getElementById('win-screen');
-  let progress = document.querySelector('.progress-wrap');
-  if (grid)     grid.style.display = 'none';
-  if (progress) progress.style.display = 'none';
-  if (win)      win.style.display = 'block';
-}
