@@ -1,0 +1,1 @@
+ALTER TABLE `teams` ADD COLUMN `password` VARCHAR(255) NOT NULL DEFAULT '' AFTER `team_name`;

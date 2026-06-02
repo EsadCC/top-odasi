@@ -16,9 +16,8 @@
         Kies een kamer en ontsnap voor het te laat is.
       </p>
       <nav class="rooms-nav">
-        <a class="btn" href="./rooms/room_1.php">🕯 De Verlaten Kelder</a>
-        <a class="btn" href="./rooms/room_2.php">🩸 De Operatiekamer</a>
-        <a class="btn" href="./rooms/room_3.php">💀 Het Kerkhof</a>
+        <a class="btn btn-solid" href="./login.php">🔐 Inloggen / Aanmelden</a>
+        <a class="btn" href="./rooms/dashboard.php">👤 Dashboard</a>
       </nav>
     </div>
   </header>

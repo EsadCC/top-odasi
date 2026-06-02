@@ -1,16 +1,9 @@
 <?php
 require_once('../dbcon.php');
 
-try {
-    $reviews = $db_connection->query(
-        "SELECT r.*, ro.name AS room_name
-         FROM reviews r
-         LEFT JOIN rooms ro ON r.room_id = ro.id
-         ORDER BY r.created_at DESC"
-    )->fetchAll();
-} catch (PDOException $e) {
-    die("Databasefout: " . $e->getMessage());
-}
+$reviews = $db_connection->query(
+    "SELECT r.*, ro.name AS room_name FROM reviews r LEFT JOIN rooms ro ON r.room_id = ro.id ORDER BY r.created_at DESC"
+)->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -32,7 +25,6 @@ try {
 
   <nav class="admin-nav">
     <a class="btn btn-solid" href="add_review.php">+ Nieuwe review</a>
-    <a class="btn" href="add_team.php">Team aanmaken</a>
     <a class="btn" href="show_all_teams.php">Alle teams</a>
     <a class="btn" href="../admin/show_all_riddles.php">Alle raadsels</a>
   </nav>

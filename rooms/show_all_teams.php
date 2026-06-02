@@ -1,17 +1,8 @@
 <?php
 require_once('../dbcon.php');
 
-try {
-    // Haal alle teams op
-    $teams = $db_connection->query("SELECT * FROM teams ORDER BY created_at DESC")->fetchAll();
-
-    // Haal per team de leden op
-    $stmtMembers = $db_connection->prepare(
-        "SELECT member_name FROM team_members WHERE team_id = :tid"
-    );
-} catch (PDOException $e) {
-    die("Databasefout: " . $e->getMessage());
-}
+$teams = $db_connection->query("SELECT * FROM teams ORDER BY created_at DESC")->fetchAll();
+$stmtMembers = $db_connection->prepare("SELECT member_name FROM team_members WHERE team_id = :tid");
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -32,7 +23,6 @@ try {
   </div>
 
   <nav class="admin-nav">
-    <a class="btn btn-solid" href="add_team.php">+ Nieuw team</a>
     <a class="btn" href="../admin/add_riddle.php">Raadsel toevoegen</a>
     <a class="btn" href="../admin/show_all_riddles.php">Alle raadsels</a>
     <a class="btn" href="add_review.php">Review toevoegen</a>
