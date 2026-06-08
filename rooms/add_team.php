@@ -1,12 +1,12 @@
 <?php
 require_once('../dbcon.php');
+$db_connection = getDB();
 
 $success = '';
 $error   = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $teamName = trim($_POST['team_name'] ?? '');
-    // Verzamel alle niet-lege leden
     $members = array_filter(array_map('trim', $_POST['members'] ?? []), fn($m) => $m !== '');
 
     if ($teamName === '') {
@@ -15,12 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Voeg minimaal twee teamleden toe.';
     } else {
         try {
-            // Team opslaan
             $stmt = $db_connection->prepare("INSERT INTO teams (team_name) VALUES (:name)");
             $stmt->execute([':name' => $teamName]);
             $teamId = $db_connection->lastInsertId();
 
-            // Leden opslaan
             $stmtM = $db_connection->prepare(
                 "INSERT INTO team_members (team_id, member_name) VALUES (:tid, :name)"
             );

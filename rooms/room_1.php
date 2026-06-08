@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once('../dbcon.php');
+$db_connection = getDB();
 
 if (!isset($_SESSION['team_id'])) {
     header('Location: ../login.php');

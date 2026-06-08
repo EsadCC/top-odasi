@@ -1,5 +1,6 @@
 <?php
 require_once('../dbcon.php');
+$db_connection = getDB();
 
 $teams = $db_connection->query("SELECT * FROM teams ORDER BY created_at DESC")->fetchAll();
 $stmtMembers = $db_connection->prepare("SELECT member_name FROM team_members WHERE team_id = :tid");

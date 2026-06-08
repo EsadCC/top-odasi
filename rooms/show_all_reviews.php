@@ -1,5 +1,6 @@
 <?php
 require_once('../dbcon.php');
+$db_connection = getDB();
 
 $reviews = $db_connection->query(
     "SELECT r.*, ro.name AS room_name FROM reviews r LEFT JOIN rooms ro ON r.room_id = ro.id ORDER BY r.created_at DESC"

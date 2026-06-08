@@ -1,5 +1,6 @@
 <?php
 require_once('../dbcon.php');
+$db_connection = getDB();
 
 try {
     $riddles = $db_connection->query(
