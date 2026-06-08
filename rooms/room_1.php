@@ -1,12 +1,16 @@
 <?php
+session_start();
 require_once('../dbcon.php');
 
-try {
-    $stmt    = $db_connection->query("SELECT * FROM riddles WHERE roomId = 1");
-    $riddles = $stmt->fetchAll();
-} catch (PDOException $e) {
-    die("Databasefout: " . $e->getMessage());
+if (!isset($_SESSION['team_id'])) {
+    header('Location: ../login.php');
+    exit;
 }
+
+$teamName = $_SESSION['team_name'];
+
+$stmt = $db_connection->query("SELECT * FROM riddles WHERE roomId = 1");
+$riddles = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -20,20 +24,18 @@ try {
 
 <div class="page">
 
-  <a class="back-link" href="../index.php">← Terug naar de ingang</a>
+  <a class="back-link" href="dashboard.php">← Terug naar dashboard</a>
 
   <div class="page-header">
     <h1>🕯 De Verlaten Kelder</h1>
     <p>Een donkere, vochtige kelder vol geheimen. De muren fluisteren...</p>
-    <span class="team-label">Team: ...</span>
+    <span class="team-label">Team: <?= htmlspecialchars($teamName) ?></span>
   </div>
 
-  <!-- Levens -->
   <div class="lives-wrap">
     Levens: <span id="lives-display"></span>
   </div>
 
-  <!-- Voortgang -->
   <div class="progress-wrap">
     <p class="progress-label" id="progress-label">0 / <?= count($riddles) ?> raadsels opgelost</p>
     <div class="progress-bar-bg">
@@ -41,7 +43,6 @@ try {
     </div>
   </div>
 
-  <!-- Raadsel-boxen -->
   <div class="container">
     <?php foreach ($riddles as $index => $riddle) : ?>
     <div class="box"
@@ -56,28 +57,24 @@ try {
     <?php endforeach; ?>
   </div>
 
-  <!-- WIN SCHERM -->
   <div class="win-screen" id="win-screen">
     <h2>Je bent ontsnapt! 🕯</h2>
-    <p>Je hebt alle raadsels van De Verlaten Kelder opgelost.<br>Durf jij de volgende kamer aan?</p>
+    <p>Team <strong><?= htmlspecialchars($teamName) ?></strong> heeft alle raadsels van De Verlaten Kelder opgelost.<br>Durf jij de volgende kamer aan?</p>
     <a class="btn btn-solid" href="room_2.php">→ Naar De Operatiekamer</a>
   </div>
 
-  <!-- VERLIES SCHERM -->
   <div class="lose-screen" id="lose-screen">
     <h2>Je bent gevangen... 💀</h2>
-    <p>Je levens zijn op. De duisternis heeft je opgeslokt.<br>Probeer het opnieuw.</p>
+    <p>De levens van team <strong><?= htmlspecialchars($teamName) ?></strong> zijn op. Probeer het opnieuw.</p>
     <a class="btn btn-solid" href="room_1.php">↩ Opnieuw proberen</a>
     &nbsp;
-    <a class="btn" href="../index.php">← Terug naar de ingang</a>
+    <a class="btn" href="dashboard.php">← Terug naar dashboard</a>
   </div>
 
-</div><!-- /.page -->
+</div>
 
-<!-- Overlay -->
 <section class="overlay" id="overlay" onclick="closeModal()"></section>
 
-<!-- Modal -->
 <section class="modal" id="modal">
   <h2>Escape Room Vraag</h2>
   <p id="riddle"></p>

@@ -93,7 +93,6 @@ $allTeams = $db_connection->query(
       <p>Welkom terug in The Dark House</p>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <a class="btn btn-solid" href="../index.php">🏠 Naar kamers</a>
       <a class="btn btn-muted" href="logout.php">Uitloggen</a>
     </div>
   </div>

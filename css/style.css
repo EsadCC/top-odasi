@@ -474,6 +474,7 @@ header.hero::after {
 }
 
 .form-group input[type="text"],
+.form-group input[type="password"],
 .form-group input[type="number"],
 .form-group select,
 .form-group textarea {
