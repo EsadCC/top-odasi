@@ -20,16 +20,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $members = array_filter(array_map('trim', $_POST['members'] ?? []), fn($m) => $m !== '');
 
         if ($teamName === '') {
-            $error = 'Vul een teamnaam in.';
+            $error = 'Vul hier een teamnaam in.';
         } elseif (strlen($password) < 4) {
-            $error = 'Wachtwoord moet minimaal 4 tekens zijn.';
+            $error = 'Wachtwoord moet minimaal 4 tekens bevatten.';
         } elseif (count($members) < 2) {
-            $error = 'Voeg minimaal twee teamleden toe.';
+            $error = 'Voeg hier minimaal twee teamleden toe.';
         } else {
             $check = $db_connection->prepare("SELECT id FROM teams WHERE team_name = :name");
             $check->execute([':name' => $teamName]);
             if ($check->fetch()) {
-                $error = 'Deze teamnaam is al bezet. Kies een andere naam.';
+                $error = 'Deze teamnaam is al in gebruik. Kies een andere teamnaam.';
             } else {
                 $hashed = password_hash($password, PASSWORD_DEFAULT);
                 $stmt = $db_connection->prepare("INSERT INTO teams (team_name, password) VALUES (:name, :pw)");
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else {
         if ($teamName === '' || $password === '') {
-            $error = 'Vul je teamnaam en wachtwoord in.';
+            $error = 'Vul hier je teamnaam en wachtwoord in.';
         } else {
             $stmt = $db_connection->prepare("SELECT id, team_name, password FROM teams WHERE team_name = :name");
             $stmt->execute([':name' => $teamName]);
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: rooms/dashboard.php');
                 exit;
             } else {
-                $error = 'Teamnaam of wachtwoord klopt niet.';
+                $error = 'De teamnaam of het wachtwoord klopt niet.';
             }
         }
     }
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="auth-wrap">
   <div class="auth-card">
     <h1 class="auth-title">The Dark House</h1>
-    <p class="auth-sub">Log in of maak een team aan om te beginnen.</p>
+    <p class="auth-sub">Log in of maak hier een team aan om verder te gaan.</p>
 
     <div class="tab-row">
       <button class="tab-btn" id="tab-login" onclick="switchTab('login')">Inloggen</button>
@@ -108,37 +108,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <div class="form-group">
         <label for="team_name">Teamnaam</label>
-        <input type="text" id="team_name" name="team_name" placeholder="Naam van jullie team" value="<?= htmlspecialchars($_POST['team_name'] ?? '') ?>">
+        <input type="text" id="team_name" name="team_name" placeholder="Vul hier jullie teamnaam in" value="<?= htmlspecialchars($_POST['team_name'] ?? '') ?>">
       </div>
 
       <div class="form-group">
         <label for="password">Wachtwoord</label>
-        <input type="password" id="password" name="password" placeholder="Jullie wachtwoord">
+        <input type="password" id="password" name="password" placeholder="Vul hier jullie wachtwoord in">
       </div>
 
       <div id="register-fields" style="display:none">
         <div class="form-group">
           <label>Teamlid 1</label>
-          <input type="text" name="members[]" placeholder="Naam teamlid 1" value="<?= htmlspecialchars($_POST['members'][0] ?? '') ?>">
+          <input type="text" name="members[]" placeholder="Vul hier de naam van teamlid 1 in" value="<?= htmlspecialchars($_POST['members'][0] ?? '') ?>">
         </div>
+
         <div class="form-group">
           <label>Teamlid 2</label>
-          <input type="text" name="members[]" placeholder="Naam teamlid 2" value="<?= htmlspecialchars($_POST['members'][1] ?? '') ?>">
+          <input type="text" name="members[]" placeholder="Vul hier de naam van teamlid 2 in" value="<?= htmlspecialchars($_POST['members'][1] ?? '') ?>">
         </div>
+
         <div class="extra-members" id="extra-members">
           <div class="form-group">
             <label>Teamlid 3 <span style="color:var(--muted)">(optioneel)</span></label>
-            <input type="text" name="members[]" placeholder="Naam teamlid 3" value="<?= htmlspecialchars($_POST['members'][2] ?? '') ?>">
+            <input type="text" name="members[]" placeholder="Vul hier de naam van teamlid 3 in" value="<?= htmlspecialchars($_POST['members'][2] ?? '') ?>">
           </div>
+
           <div class="form-group">
             <label>Teamlid 4 <span style="color:var(--muted)">(optioneel)</span></label>
-            <input type="text" name="members[]" placeholder="Naam teamlid 4" value="<?= htmlspecialchars($_POST['members'][3] ?? '') ?>">
+            <input type="text" name="members[]" placeholder="Vul hier de naam van teamlid 4 in" value="<?= htmlspecialchars($_POST['members'][3] ?? '') ?>">
           </div>
         </div>
-        <button type="button" class="btn btn-muted" id="more-btn" onclick="toggleMore()" style="margin-bottom:18px;font-size:0.8rem;padding:7px 14px">+ Meer leden</button>
+
+        <button type="button" class="btn btn-muted" id="more-btn" onclick="toggleMore()" style="margin-bottom:18px;font-size:0.8rem;padding:7px 14px">
+          + Meer leden
+        </button>
       </div>
 
-      <button type="submit" class="btn btn-solid" style="width:100%" id="submit-btn">Inloggen</button>
+      <button type="submit" class="btn btn-solid" style="width:100%" id="submit-btn">Log hier in</button>
     </form>
 
     <a class="back-home" href="index.php">← Terug naar de ingang</a>
@@ -153,7 +159,7 @@ function switchTab(mode) {
   document.getElementById('tab-login').classList.toggle('active', mode === 'login');
   document.getElementById('tab-register').classList.toggle('active', mode === 'register');
   document.getElementById('register-fields').style.display = mode === 'register' ? 'block' : 'none';
-  document.getElementById('submit-btn').textContent = mode === 'register' ? 'Team aanmaken' : 'Inloggen';
+  document.getElementById('submit-btn').textContent = mode === 'register' ? 'Maak hier je team aan' : 'Log hier in';
 }
 
 function toggleMore() {
@@ -168,3 +174,5 @@ switchTab(initialMode);
 </script>
 </body>
 </html>
+
+
