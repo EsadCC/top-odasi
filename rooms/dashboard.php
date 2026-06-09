@@ -8,7 +8,7 @@ if (!isset($_SESSION['team_id'])) {
     exit;
 }
 
-$teamId = $_SESSION['team_id'];
+$teamId   = $_SESSION['team_id'];
 $teamName = $_SESSION['team_name'];
 
 $team = $db_connection->prepare("SELECT * FROM teams WHERE id = :id");
@@ -19,7 +19,7 @@ $membersStmt = $db_connection->prepare("SELECT member_name FROM team_members WHE
 $membersStmt->execute([':id' => $teamId]);
 $members = $membersStmt->fetchAll(PDO::FETCH_COLUMN);
 
-$addMemberError = '';
+$addMemberError   = '';
 $addMemberSuccess = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_member'])) {
@@ -36,7 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_member'])) {
 }
 
 $reviews = $db_connection->query(
-    "SELECT r.*, ro.name AS room_name FROM reviews r LEFT JOIN rooms ro ON r.room_id = ro.id ORDER BY r.created_at DESC LIMIT 20"
+    "SELECT r.*, ro.name AS room_name
+     FROM reviews r
+     LEFT JOIN rooms ro ON r.room_id = ro.id
+     ORDER BY r.created_at DESC LIMIT 20"
 )->fetchAll();
 
 $allTeams = $db_connection->query(
@@ -44,6 +47,27 @@ $allTeams = $db_connection->query(
      (SELECT COUNT(*) FROM team_members WHERE team_id = t.id) AS member_count
      FROM teams t ORDER BY t.created_at ASC"
 )->fetchAll();
+
+// Scoreboard: beste score per team per kamer
+$scoresByRoom = [];
+try {
+    $scoreRows = $db_connection->query(
+        "SELECT s.team_name, s.room_id, ro.name AS room_name,
+                MAX(s.score) AS best_score,
+                MAX(s.time_left) AS best_time,
+                MAX(s.lives_left) AS best_lives
+         FROM scores s
+         LEFT JOIN rooms ro ON s.room_id = ro.id
+         GROUP BY s.team_name, s.room_id
+         ORDER BY s.room_id ASC, best_score DESC"
+    )->fetchAll();
+    foreach ($scoreRows as $row) {
+        $scoresByRoom[$row['room_id']][] = $row;
+    }
+} catch (PDOException $e) {
+    // scores tabel bestaat nog niet — geen probleem, scoreboard blijft leeg
+    $scoresByRoom = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -72,16 +96,18 @@ $allTeams = $db_connection->query(
     .add-member-row input { flex: 1; padding: 9px 12px; background: #1a1a1a; border: 1px solid var(--border); color: var(--text); font-family: var(--font-body); font-size: 0.9rem; border-radius: 3px; outline: none; }
     .add-member-row input:focus { border-color: var(--red); }
     .section-title { font-family: var(--font-head); color: var(--yellow); font-size: 1.1rem; letter-spacing: 1px; margin-bottom: 16px; }
+    .room-section { margin-bottom: 36px; }
+    .room-section-title { font-family: var(--font-head); color: var(--red-light); font-size: 1rem; letter-spacing: 2px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
     .scoreboard-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px; }
     .scoreboard-item.highlight { border-color: var(--red); background: rgba(139,0,0,0.1); }
     .rank { font-family: var(--font-head); font-size: 1.3rem; color: var(--muted); width: 28px; text-align: center; }
-    .rank.gold { color: #ffd700; }
+    .rank.gold   { color: #ffd700; }
     .rank.silver { color: #c0c0c0; }
     .rank.bronze { color: #cd7f32; }
-    .score-name { flex: 1; font-size: 0.95rem; }
-    .score-members { font-size: 0.78rem; color: var(--muted); }
-    .score-date { font-size: 0.75rem; color: var(--muted); }
-    .play-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .score-info { flex: 1; }
+    .score-name    { font-size: 0.95rem; }
+    .score-details { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .score-pts { font-family: var(--font-head); font-size: 1.2rem; color: var(--yellow); letter-spacing: 1px; }
     .rooms-nav-dash { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
   </style>
 </head>
@@ -93,18 +119,17 @@ $allTeams = $db_connection->query(
       <h1>👤 <?= htmlspecialchars($teamName) ?></h1>
       <p>Welkom terug in The Dark House</p>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <a class="btn btn-muted" href="logout.php">Uitloggen</a>
-    </div>
+    <a class="btn btn-muted" href="logout.php">Uitloggen</a>
   </div>
 
   <div class="tab-nav">
-    <button class="active" onclick="showTab('team')">👥 Mijn Team</button>
-    <button onclick="showTab('scoreboard')">🏆 Scoreboard</button>
-    <button onclick="showTab('reviews')">★ Reviews</button>
-    <button onclick="showTab('spelen')">🎮 Spelen</button>
+    <button class="active" onclick="showTab('team', this)">👥 Mijn Team</button>
+    <button onclick="showTab('scoreboard', this)">🏆 Scoreboard</button>
+    <button onclick="showTab('reviews', this)">★ Reviews</button>
+    <button onclick="showTab('spelen', this)">🎮 Spelen</button>
   </div>
 
+  <!-- TAB: TEAM -->
   <div id="tab-team" class="tab-panel active">
     <div class="info-grid">
       <div class="info-card">
@@ -132,14 +157,12 @@ $allTeams = $db_connection->query(
     </div>
 
     <p class="section-title" style="margin-top:24px">Teamlid toevoegen</p>
-
     <?php if ($addMemberSuccess): ?>
       <div class="form-success" style="margin-bottom:12px"><?= $addMemberSuccess ?></div>
     <?php endif; ?>
     <?php if ($addMemberError): ?>
       <div class="form-error" style="margin-bottom:12px"><?= htmlspecialchars($addMemberError) ?></div>
     <?php endif; ?>
-
     <form method="POST" action="">
       <div class="add-member-row">
         <input type="text" name="new_member" placeholder="Naam van nieuw teamlid">
@@ -148,23 +171,53 @@ $allTeams = $db_connection->query(
     </form>
   </div>
 
+  <!-- TAB: SCOREBOARD -->
   <div id="tab-scoreboard" class="tab-panel">
-    <p class="section-title">Geregistreerde teams</p>
-    <?php foreach ($allTeams as $i => $t): ?>
-      <div class="scoreboard-item <?= $t['id'] == $teamId ? 'highlight' : '' ?>">
-        <div class="rank <?= $i === 0 ? 'gold' : ($i === 1 ? 'silver' : ($i === 2 ? 'bronze' : '')) ?>"><?= $i + 1 ?></div>
-        <div>
-          <div class="score-name"><?= htmlspecialchars($t['team_name']) ?> <?= $t['id'] == $teamId ? '<span style="color:var(--yellow);font-size:0.75rem">(jij)</span>' : '' ?></div>
-          <div class="score-members"><?= $t['member_count'] ?> <?= $t['member_count'] == 1 ? 'lid' : 'leden' ?></div>
-        </div>
-        <div class="score-date"><?= date('d-m-Y', strtotime($t['created_at'])) ?></div>
+    <p class="section-title">🏆 Scoreboard per kamer</p>
+    <p style="color:var(--muted);font-size:0.82rem;margin-bottom:24px">
+      Score = seconden over bij winst + (levens over × 20 punten).
+    </p>
+
+    <?php if (empty($scoresByRoom)): ?>
+      <div class="empty-state">Nog geen scores. Speel een kamer om op het scoreboard te komen!</div>
+    <?php else: ?>
+      <?php
+      $roomLabels = [
+        1 => '🕯 Kamer 1 — De Verlaten Kelder',
+        2 => '🩸 Kamer 2 — De Operatiekamer',
+        3 => '💀 Kamer 3 — Het Kerkhof',
+      ];
+      foreach ($roomLabels as $rid => $label):
+        if (empty($scoresByRoom[$rid])) continue;
+      ?>
+      <div class="room-section">
+        <p class="room-section-title"><?= $label ?></p>
+        <?php foreach ($scoresByRoom[$rid] as $i => $s): ?>
+          <div class="scoreboard-item <?= strtolower($s['team_name']) === strtolower($teamName) ? 'highlight' : '' ?>">
+            <div class="rank <?= $i === 0 ? 'gold' : ($i === 1 ? 'silver' : ($i === 2 ? 'bronze' : '')) ?>">
+              <?= $i + 1 ?>
+            </div>
+            <div class="score-info">
+              <div class="score-name">
+                <?= htmlspecialchars($s['team_name']) ?>
+                <?php if (strtolower($s['team_name']) === strtolower($teamName)): ?>
+                  <span style="color:var(--yellow);font-size:0.72rem">(jij)</span>
+                <?php endif; ?>
+              </div>
+              <div class="score-details">
+                ⏱ <?= gmdate('i:s', $s['best_time']) ?> over &nbsp;|&nbsp;
+                ♥ <?= $s['best_lives'] ?> leven<?= $s['best_lives'] != 1 ? 's' : '' ?> over
+              </div>
+            </div>
+            <div class="score-pts"><?= $s['best_score'] ?> pts</div>
+          </div>
+        <?php endforeach; ?>
       </div>
-    <?php endforeach; ?>
-    <?php if (empty($allTeams)): ?>
-      <div class="empty-state">Nog geen teams.</div>
+      <?php endforeach; ?>
     <?php endif; ?>
   </div>
 
+  <!-- TAB: REVIEWS -->
   <div id="tab-reviews" class="tab-panel">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
       <p class="section-title" style="margin:0">Laatste reviews</p>
@@ -177,12 +230,7 @@ $allTeams = $db_connection->query(
         <table class="data-table">
           <thead>
             <tr>
-              <th>Team</th>
-              <th>Kamer</th>
-              <th>Beoordeling</th>
-              <th>Moeilijkheid</th>
-              <th>Feedback</th>
-              <th>Datum</th>
+              <th>Team</th><th>Kamer</th><th>Beoordeling</th><th>Moeilijkheid</th><th>Feedback</th><th>Datum</th>
             </tr>
           </thead>
           <tbody>
@@ -202,9 +250,12 @@ $allTeams = $db_connection->query(
     </div>
   </div>
 
+  <!-- TAB: SPELEN -->
   <div id="tab-spelen" class="tab-panel">
     <p class="section-title">Kies een kamer</p>
-    <p style="color:var(--muted);font-size:0.9rem;margin-bottom:20px">Je speelt als team: <span style="color:var(--yellow)"><?= htmlspecialchars($teamName) ?></span></p>
+    <p style="color:var(--muted);font-size:0.9rem;margin-bottom:20px">
+      Je speelt als team: <span style="color:var(--yellow)"><?= htmlspecialchars($teamName) ?></span>
+    </p>
     <div class="rooms-nav-dash">
       <a class="btn" href="room_1.php">🕯 De Verlaten Kelder</a>
       <a class="btn" href="room_2.php">🩸 De Operatiekamer</a>
@@ -215,11 +266,11 @@ $allTeams = $db_connection->query(
 </div>
 
 <script>
-function showTab(name) {
+function showTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
-  event.target.classList.add('active');
+  btn.classList.add('active');
 }
 </script>
 </body>

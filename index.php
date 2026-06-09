@@ -18,7 +18,6 @@
       <nav class="rooms-nav">
         <a class="btn btn-solid" href="./login.php">🔐 Inloggen / Aanmelden</a>
         <a class="btn" href="./rooms/dashboard.php">👤 Dashboard</a>
-      
       </nav>
     </div>
   </header>

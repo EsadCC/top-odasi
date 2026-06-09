@@ -44,6 +44,12 @@ a:hover { color: var(--yellow); }
   98%          { opacity: 0.9; }
 }
 
+/* ---- Timer pulse (rood knipperen bij weinig tijd) ---- */
+@keyframes timerPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.55; transform: scale(1.06); }
+}
+
 /* ============================================
    HERO / INDEX
    ============================================ */
@@ -169,7 +175,7 @@ header.hero::after {
 
 .page-header {
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: 28px;
 }
 
 .page-header h1 {
@@ -190,6 +196,34 @@ header.hero::after {
   color: var(--yellow);
   font-size: 0.88rem;
   letter-spacing: 1px;
+}
+
+/* ============================================
+   TIMER
+   ============================================ */
+.timer-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.timer-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+#timer-display {
+  font-family: var(--font-head);
+  font-size: 2.2rem;
+  letter-spacing: 3px;
+  color: var(--text);
+  transition: color 0.4s;
+  min-width: 80px;
+  text-align: center;
 }
 
 /* ---- Progress ---- */
@@ -219,7 +253,7 @@ header.hero::after {
 /* ---- Lives ---- */
 .lives-wrap {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   font-size: 1.3rem;
   letter-spacing: 4px;
 }
@@ -311,7 +345,6 @@ header.hero::after {
   white-space: pre-line;
 }
 
-/* Hint */
 .hint-toggle {
   font-size: 0.78rem;
   color: var(--muted);
@@ -334,7 +367,6 @@ header.hero::after {
   border-radius: 2px;
 }
 
-/* Input */
 .modal input[type="text"] {
   width: 100%;
   padding: 10px 14px;
@@ -383,19 +415,31 @@ header.hero::after {
   animation: flicker 3s infinite;
 }
 
-.win-screen p { color: var(--text); font-size: 1rem; margin-bottom: 24px; line-height: 1.7; }
+.win-screen p { color: var(--text); font-size: 1rem; margin-bottom: 16px; line-height: 1.7; }
+
+.win-score {
+  font-family: var(--font-head);
+  font-size: 1.6rem;
+  color: var(--yellow);
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+}
 
 /* ============================================
-   LOSE SCREEN
+   LOSE SCREENS
    ============================================ */
-.lose-screen {
+.lose-screen,
+.lose-screen-lives,
+.lose-screen-time {
   display: none;
   text-align: center;
   padding: 56px 0 0;
   animation: fadeIn 0.6s ease;
 }
 
-.lose-screen h2 {
+.lose-screen h2,
+.lose-screen-lives h2,
+.lose-screen-time h2 {
   font-family: var(--font-head);
   font-size: clamp(2rem, 5vw, 3rem);
   color: var(--red-light);
@@ -404,7 +448,14 @@ header.hero::after {
   animation: flicker 2s infinite;
 }
 
-.lose-screen p { color: var(--muted); font-size: 1rem; margin-bottom: 24px; line-height: 1.7; }
+.lose-screen p,
+.lose-screen-lives p,
+.lose-screen-time p {
+  color: var(--muted);
+  font-size: 1rem;
+  margin-bottom: 24px;
+  line-height: 1.7;
+}
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(16px); }
@@ -460,9 +511,7 @@ header.hero::after {
   margin-bottom: 20px;
 }
 
-.form-group {
-  margin-bottom: 18px;
-}
+.form-group { margin-bottom: 18px; }
 
 .form-group label {
   display: block;
@@ -552,7 +601,6 @@ header.hero::after {
 }
 
 .data-table tr:last-child td { border-bottom: none; }
-
 .data-table tr:hover td { background: var(--surface2); }
 
 .table-wrap {
@@ -563,10 +611,8 @@ header.hero::after {
   overflow-x: auto;
 }
 
-/* Stars */
-.stars { color: var(--yellow); letter-spacing: 2px; }
+.stars  { color: var(--yellow); letter-spacing: 2px; }
 
-/* Badge */
 .badge {
   display: inline-block;
   padding: 2px 8px;
